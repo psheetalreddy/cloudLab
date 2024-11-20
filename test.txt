@@ -1,0 +1,384 @@
+	FCFS
+
+def fcfs_scheduling(task_count, vm_count, task_durations, processing_times):
+    wait_times = [0] * task_count
+    vm_finish_times = [0] * vm_count
+
+    print("Task | Duration | Processing Time | Assigned VM | Wait Time")
+
+    for task_idx in range(task_count):
+        assigned_vm = task_idx % vm_count
+        wait_times[task_idx] = vm_finish_times[assigned_vm]
+        vm_finish_times[assigned_vm] += processing_times[task_idx]
+        print(f"{task_idx + 1:>4} | {task_durations[task_idx]:>8} | {processing_times[task_idx]:>14} | {assigned_vm + 1:>11} | {wait_times[task_idx]:>10}")
+    
+    total_wait_time = 0
+
+    for i in range(-(vm_count),0):
+        total_wait_time += wait_times[i]
+    avg_wait_time = total_wait_time / vm_count
+
+    print(f"\nTotal Wait Time: {total_wait_time}")
+    print(f"Average Wait Time: {avg_wait_time:.2f}")
+
+# Input
+task_count = 5
+vm_count = 3
+task_durations = [10, 5, 8, 12, 15]
+processing_times = [0, 1, 2, 3, 4]
+
+fcfs_scheduling(task_count, vm_count, task_durations, processing_times)
+
+------------------------------------------------------------------------------------------
+	SJF
+
+def sjf_vm(num_tasks, num_vms, task_lengths, exec_times):
+    tasks = [{'id': i + 1, 'length': task_lengths[i], 'exec_time': exec_times[i]} for i in range(num_tasks)]
+
+    tasks.sort(key=lambda x: x['length'])
+
+    waiting_times = [0] * num_tasks  
+    vm_end_times = [0] * num_vms 
+
+    print("Task ID | Length | Execution Time | Assigned VM | Waiting Time")
+
+    for i in range(num_tasks):
+        task_id = tasks[i]['id']
+        length = tasks[i]['length']
+        exec_time = tasks[i]['exec_time']
+
+        vm_id = i % num_vms
+
+        if i >= num_vms:
+            waiting_times[task_id - 1] = vm_end_times[vm_id]
+
+        vm_end_times[vm_id] += exec_time
+
+        print(f"T{task_id:>5}  | {length:>6} | {exec_time:>14} | {vm_id + 1:>10} | {waiting_times[task_id - 1]:>12}")
+
+    total_waiting_time = sum(waiting_times)
+    average_waiting_time = total_waiting_time / num_vms
+
+    print(f"\nTotal Waiting Time: {total_waiting_time}")
+    print(f"Average Waiting Time: {average_waiting_time:.2f}")
+
+
+num_tasks = 5
+num_vms = 3
+task_lengths = [7, 2, 5, 1, 4]
+exec_times = [0, 1, 2, 3, 4]
+
+sjf_vm(num_tasks, num_vms, task_lengths, exec_times)
+
+---------------------------------------------------------------------------------------
+	MIN_MAX
+
+
+def min_max_scheduling(minMax):
+    nM = len(minMax) 
+    nT = len(minMax[0])
+
+    scheduled_tasks = []
+    makespan = 0
+
+    scheduled = [False] * nT
+
+    while True:
+        min_time = float('inf')
+        task_index = -1
+        machine_index = -1
+
+        for j in range(nT):
+            if not scheduled[j]:
+                for i in range(nM):
+                    if minMax[i][j] < min_time:
+                        min_time = minMax[i][j]
+                        task_index = j
+                        machine_index = i
+
+        if task_index == -1:
+            break
+
+
+        scheduled[task_index] = True
+        scheduled_tasks.append((task_index + 1, machine_index + 1, min_time))
+        makespan = max(makespan, min_time)
+
+        for i in range(nM):
+            if i == machine_index:
+                minMax[i][task_index] += min_time
+            else:
+                minMax[i][task_index] = float('inf')
+
+        print(f"\nState of minMax after scheduling Task {task_index + 1} on Machine {machine_index + 1}:")
+        for row in minMax:
+            print(row)
+
+    return scheduled_tasks, makespan
+
+minMax = [[3, 4, 6], [6, 12, 20], [7, 8, 18]]
+
+scheduled_tasks, compTime = min_max_scheduling(minMax)
+
+print("\nScheduled tasks:")
+for task in scheduled_tasks:
+    print(f"Task {task[0]} runs on Machine {task[1]} with Time {task[2]} units")
+
+print(f"\nOverall completion time: {compTime} units")
+
+------------------------------------------------------------------------------------------
+	MINMAX FOR 15 TAKS
+
+
+def min_max_scheduling(task_count, vm_count, task_durations):
+    completion_times = [[0] * vm_count for _ in range(task_count)]
+    assigned_tasks = [-1] * task_count
+    vm_finish_times = [0] * vm_count
+
+    print("Step | Task | Assigned VM | Task Time | VM Finish Times")
+    print("-" * 50)
+
+    for step in range(task_count):
+        for task in range(task_count):
+            if assigned_tasks[task] == -1:
+                for vm in range(vm_count):
+                    completion_times[task][vm] = task_durations[task] + vm_finish_times[vm]
+
+        min_max_time = float('inf')
+        selected_task = -1
+        selected_vm = -1
+
+        for task in range(task_count):
+            if assigned_tasks[task] == -1:
+                for vm in range(vm_count):
+                    temp_vm_finish_times = vm_finish_times[:]
+                    temp_vm_finish_times[vm] += task_durations[task]
+                    max_finish_time = max(temp_vm_finish_times)
+                    if max_finish_time < min_max_time:
+                        min_max_time = max_finish_time
+                        selected_task = task
+                        selected_vm = vm
+
+        assigned_tasks[selected_task] = selected_vm
+        vm_finish_times[selected_vm] += task_durations[selected_task]
+
+        print(f"{step + 1:>4} | {selected_task + 1:>4} | {selected_vm + 1:>11} | {task_durations[selected_task]:>9} | {vm_finish_times}")
+
+    print("\nFinal Task Assignments:", assigned_tasks)
+
+# Example Input
+task_count = 5
+vm_count = 3
+task_durations = [12, 7, 10, 15, 9, 14, 8, 11, 13, 5, 6, 16, 7, 18, 10]
+
+min_max_scheduling(task_count, vm_count, task_durations)
+
+---------------------------------------------------------------------------------
+	MIN_MIN 
+
+def min_min_scheduling(nM, nT, minMin):
+    print("Original Data")
+    print("VM\t" + "\t".join([f"T{i+1}" for i in range(nT)]))
+
+    for i in range(nM):
+        print(f"M{i + 1}\t" + "\t".join(map(str, minMin[i])))
+
+    done = [-1] * nT 
+    ptr = [0] * nT 
+    min_times = [0] * nT 
+    resultTask = [0] * nT
+    resultMachine = [0] * nT
+    resultTime = [0] * nT
+
+    for k in range(nT):
+        for i in range(nT):
+            if done[i] == 0:
+                continue
+            min_times[i] = minMin[0][i]
+
+        for j in range(nT):
+            if done[j] == 0:
+                continue
+            for i in range(nM):
+                if minMin[i][j] <= min_times[j]:
+                    min_times[j] = minMin[i][j]
+                    ptr[j] = i
+
+        p = float('inf') 
+        p1 = 0 
+        for i in range(nT):
+            if done[i] == 0:
+                continue
+            if min_times[i] <= p:
+                p = min_times[i]
+                p1 = i
+
+        resultTask[k] = p1
+        resultMachine[k] = ptr[p1]
+        resultTime[k] = minMin[ptr[p1]][p1]
+        done[p1] = 0
+        for j in range(nT):
+            if done[j] == -1:
+                minMin[ptr[p1]][j] += p
+
+
+    print("\nScheduled Tasks:")
+    for i in range(nT):
+        print(f"Task {resultTask[i] + 1} runs on Machine {resultMachine[i] + 1} with Time {resultTime[i]} units")
+
+    print(f"Overall completion time = {max(resultTime)}")
+
+
+nM = 3
+nT = 3
+minMin = [[3, 4, 6], [6, 12, 20], [7, 8, 18]]
+
+min_min_scheduling(nM, nT, minMin)
+
+---------------------------------------------------------------------------------------
+	MINMIN FOR 15 TASKS
+
+def min_min_scheduling(task_count, vm_count, task_durations):
+    completion_times = [[0] * vm_count for _ in range(task_count)]
+    assigned_tasks = [-1] * task_count
+    vm_finish_times = [0] * vm_count
+
+    print("Step | Task | Assigned VM | Task Time | VM Finish Times")
+    print("-" * 50)
+
+    for step in range(task_count):
+        for task in range(task_count):
+            if assigned_tasks[task] == -1:
+                for vm in range(vm_count):
+                    completion_times[task][vm] = task_durations[task] + vm_finish_times[vm]
+
+        min_time = float('inf')
+        selected_task = -1
+        selected_vm = -1
+
+        for task in range(task_count):
+            if assigned_tasks[task] == -1:  # Task not yet assigned
+                for vm in range(vm_count):
+                    if completion_times[task][vm] < min_time:
+                        min_time = completion_times[task][vm]
+                        selected_task = task
+                        selected_vm = vm
+
+        assigned_tasks[selected_task] = selected_vm
+        vm_finish_times[selected_vm] += task_durations[selected_task]
+
+        print(f"{step + 1:>4} | {selected_task + 1:>4} | {selected_vm + 1:>11} | {task_durations[selected_task]:>9} | {vm_finish_times}")
+    
+    print("\nFinal Task Assignments:", assigned_tasks)
+
+task_count = 5
+vm_count = 3
+task_durations = [12, 7, 10, 15, 9, 14, 8, 11, 13, 5, 6, 16, 7, 18, 10]
+
+min_min_scheduling(task_count, vm_count, task_durations)
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+{
+"Id": "Policy1",
+"Version": "2012-10-17",
+"Statement": [
+{
+"Sid": "Stmt1",
+"Action": ["s3:GetObject"],
+"Effect": "Allow",
+"Resource":"replace-this-string-from-your-bucket-arn/*",
+"Principal": "*"
+}
+]
+}
+
+sudo apt update
+sudo apt install mysql-server
+sudo systemctl status mysql
+sudo mysql
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Portfolio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .heading {
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .heading h1 {
+            font-size: 50px;
+            margin: 0;
+        }
+
+        .profile-section {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .profile-section h1 {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .profile-section p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .section {
+            padding: 20px;
+        }
+
+        .section h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .section p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="heading">
+        <h1>Personal Portfolio</h1>
+    </div>
+
+    <div class="profile-section">
+        <h1>Hi! I'm P Sheetal Reddy</h1>
+        <p>I am a dedicated and enthusiastic Computer Science and Engineering undergraduate student at VIT Vellore. I am eager to apply my knowledge to real-world challenges and contribute to impactful projects.</p>
+    </div>
+
+    <div class="section">
+        <h3>Skills</h3>
+        <p>Python, Java, C/C++<br>HTML, CSS, JavaScript, React, UI/UX<br>Problem Solving, Critical and Analytical Thinking, Public Speaking, Interpersonal Communication</p>
+        <hr>
+        <h3>Education</h3>
+        <p>High School: 2020-2022 - Army Public School<br>College: 2022-Present - Vellore Institute of Technology</p>
+        <hr>
+        <h3>Courses and Certifications</h3>
+        <p>UI/UX - Figma<br>Web development Bootcamp<br>Python Programming</p>
+    </div>
+</body>
+</html>
